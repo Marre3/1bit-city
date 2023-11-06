@@ -15,6 +15,8 @@ local tcrossing = love.graphics.newImage("tcrossing.png")
 tcrossing:setFilter("nearest", "nearest")
 local corner = love.graphics.newImage("corner.png")
 corner:setFilter("nearest", "nearest")
+local building = love.graphics.newImage("building.png")
+building:setFilter("nearest", "nearest")
 local selected = "house"
 local buildSound = love.audio.newSource("build_2.wav", "static")
 
@@ -54,6 +56,8 @@ function love.keypressed(key)
             selected = "tcrossing"
         elseif key == "7" then
             selected = "corner"
+        elseif key == "8" then
+            selected = "building"
         end
     end
 end
@@ -135,6 +139,10 @@ local function drawTile(tile)
         love.graphics.setColor(1, 1, 1)
         love.graphics.scale(1/32, 1/32)
         love.graphics.draw(corner)
+    elseif tile.type == "building" then
+        love.graphics.setColor(1, 1, 1)
+        love.graphics.scale(1/32, 1/32)
+        love.graphics.draw(building)
     end
 end
 
