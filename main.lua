@@ -1,7 +1,7 @@
 local scale = 50
 local world = {}
-local width = 10
-local height = 10
+local width = 60
+local height = 60
 local money = 1000
 local road = love.graphics.newImage("road.png")
 road:setFilter("nearest", "nearest")
@@ -22,6 +22,42 @@ local buildSound = love.audio.newSource("build_2.wav", "static")
 
 local gameState = "menu"
 
+-- Citizen class definition
+Citizen = {}
+Citizen.__index = Citizen
+
+function Citizen.create(x, y)
+    local self = setmetatable({}, Citizen)
+    self.x = x
+    self.y = y
+    self.happiness = 50  -- Initial happiness
+    self.speed = 1000  -- Citizen movement speed
+    self.franticness = 200  -- Increase this value to make citizens more frantic
+    return self
+end
+
+function Citizen:update(dt)
+    -- More frequent and random movements for increased franticness
+    if math.random(1, 100) < self.franticness then
+        local dx, dy = math.random(-1, 1), math.random(-1, 1)
+        self.x = self.x + dx
+        self.y = self.y + dy
+    end
+
+    -- Citizen gets happier over time
+    self.happiness = self.happiness + 0.1 * dt
+end
+
+function Citizen:draw()
+    love.graphics.setColor(1, 0, 0)  -- Red for citizens
+    love.graphics.circle("fill", self.x, self.y, 5)
+end
+
+-- Initialize citizens table
+local citizens = {}
+
+local numHouses = 0  -- Variable to track the number of houses
+
 function love.load()
     love.graphics.setNewFont(50)
     love.graphics.setBackgroundColor(0, 0, 0)
@@ -30,6 +66,12 @@ function love.load()
         for j = 1, height do
             world[i][j] = { type = "empty", rotation = 0 }
         end
+    end
+
+    -- Initialize citizens
+    for i = 1, 10 do
+        local x, y = math.random(1, width), math.random(1, height)
+        table.insert(citizens, Citizen.create(x * scale, y * scale))
     end
 end
 
@@ -78,10 +120,20 @@ function love.mousepressed(x, y)
             else
                 world[squareX][squareY].type = selected
                 world[squareX][squareY].rotation = 0
+                buildSound:play()
+                money = money - 1
+                if selected == "house" then
+                    numHouses = numHouses + 1
+                end
+
+                -- Create citizens for the new house
+                for i = 1, numHouses do
+                    local houseX = squareX * scale + math.random(scale)
+                    local houseY = squareY * scale + math.random(scale)
+                    table.insert(citizens, Citizen.create(houseX, houseY))
+                end
             end
-            buildSound:play()
         end
-        money = money - 1
     end
 end
 
@@ -98,6 +150,10 @@ function love.update(dt)
         end
         t = 0
     end
+
+    for _, citizen in ipairs(citizens) do
+        citizen:update(dt)
+    end
 end
 
 local function drawRoad()
@@ -107,7 +163,6 @@ local function drawRoad()
     love.graphics.scale(1/32, 1/32)
     love.graphics.draw(road)
 end
-
 
 local function drawTile(tile)
     love.graphics.setColor(0, 0, 0)
@@ -176,5 +231,10 @@ function love.draw()
         end
         love.graphics.setColor(1, 1, 1)
         love.graphics.print(tostring(money), 0, 0, 0, 1, 1)
+
+        -- Draw citizens
+        for _, citizen in ipairs(citizens) do
+            citizen:draw()
+        end
     end
 end
